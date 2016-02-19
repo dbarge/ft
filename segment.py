@@ -144,8 +144,8 @@ def auto_segment_all_datasets():
     #print "Data directory: " + d
 
     #studies = next(os.walk(os.path.join(d, "train")))[1] + next(os.walk(os.path.join(d, "validate")))[1]
-    studies = next(os.walk(os.path.join(d, "validate")))[1]
-    #studies = next(os.walk(os.path.join(d, "train")))[1]
+    #studies = next(os.walk(os.path.join(d, "validate")))[1]
+    studies = next(os.walk(os.path.join(d, "train")))[1]
         
     #print studies
 
