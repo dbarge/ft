@@ -616,6 +616,8 @@ def save_output(dset, d, submit_csv, accuracy_csv):
     if edv is not None:
         accuracy_csv.write("%s,%f,%f,%f,%f\n" % (dset.name, edv, esv, p_edv, p_esv))
     
+    print "Done"
+    
     return
 
     

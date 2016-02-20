@@ -30,34 +30,295 @@ def log(index, msg, lvl):
     string += msg
     print str(index) + string
 
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+def save_image_contours(name, img, contours):
+    
+    colorimg = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+    colorimg = colorimg.astype(np.uint8)
+
+    color = (0, 255, 0)
+    
+
+    
+    image.imsave(name, colorimg)
+    
+    #
+    cv2.drawContours(colorimg, contours, -1, color, -1)        
+
+    image.imsave("cont_" + name, colorimg)
     
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-def save_masks_to_dir(dataset, all_masks):
+def get_image_gray(img):
     
+    uint16 = False
+    
+    if uint16 is False:
+        
+        return img.astype(np.uint8)
+        
+    img8 = cv2.convertScaleAbs(img.astype(np.uint16))
+    
+    return img8
+
+    
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+def save_image_gray(name, img):
+
+    colorimg = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+    image.imsave(name, colorimg)
+
+    return
+
+        
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+def save_image(name, img, mask, roi, line, point, meta):
+    
+
+    #------------------------------------------------------------------------------------------------------------------------------------
+    # color image
+    #------------------------------------------------------------------------------------------------------------------------------------
+    
+    colorimg = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+    colorimg = colorimg.astype(np.uint8)
+    
+    
+    #------------------------------------------------------------------------------------------------------------------------------------
+    # outline of mask
+    #------------------------------------------------------------------------------------------------------------------------------------
+        
+    eroded = binary_erosion(mask)
+    hollow_mask = np.where(eroded, 0, mask)
+
+    #print "mask shape:        " + str(mask.shape)                
+    #print "hollow mask shape: " + str(hollow_mask.shape)
+    
+    colorimg[hollow_mask != 0] = [255, 0, 255]
+
+    
+    #------------------------------------------------------------------------------------------------------------------------------------
+    # outline of ROI
+    #------------------------------------------------------------------------------------------------------------------------------------
+        
+    #print all_rois.shape
+    #roi = all_rois[s]
+    eroded = binary_erosion(roi)
+    hollow_mask = np.where(eroded, 0, roi)
+    colorimg[hollow_mask != 0] = [0, 255, 255]
+    
+
+    #------------------------------------------------------------------------------------------------------------------------------------
+    # Patient Orientation
+    #------------------------------------------------------------------------------------------------------------------------------------    
+           
+
+    scale = 100
+    
+    xVec = np.multiply(meta.patCoords[0], scale)
+    yVec = np.multiply(meta.patCoords[1], scale)
+    zVec = np.multiply(meta.patCoords[2], scale)
+
+#    print xVec
+#    print yVec
+#    print zVec
+#    print ""
+    
+#    hollow_mask = roi*0        
+#    cv2.line(hollow_mask, (0, 10), (100, 10), (255, 255, 255) )
+#    colorimg[hollow_mask != 0] = [255, 255, 255]            
+#
+#    hollow_mask = roi*0    
+#    cv2.line(hollow_mask, (10, 0), (10, 100), (255, 255, 255) )
+#    colorimg[hollow_mask != 0] = [0, 0, 255]  
+    
+
+    x0 = hollow_mask.shape[1]/2
+    y0 = hollow_mask.shape[0]/2
+    
+#    print x0
+#    print y0
+#    print ""
+    
+    #
+    hollow_mask = roi*0    
+    cv2.line(hollow_mask, (x0, y0), ( int(xVec[0]), int(xVec[1])), (255, 255, 255) )
+    colorimg[hollow_mask != 0] = [255, 255, 255]    
+     
+    #
+    hollow_mask = roi*0    
+    cv2.line(hollow_mask, (x0, y0), ( int(yVec[0]), int(yVec[1])), (255, 255, 255) )
+    colorimg[hollow_mask != 0] = [0, 0, 255]    
+     
+    # 
+    hollow_mask = roi*0    
+    cv2.line(hollow_mask, (x0, y0), ( int(zVec[0]), int(zVec[1])), (255, 255, 255) )
+    colorimg[hollow_mask != 0] = [0, 255, 0]    
+    
+    
+#    line
+#    #print all_lines.shape
+#    #ine_t = all_lines[t]
+#    
+#    #print type(line_t)
+#    #print len(line_t)
+#    
+#    #line_t_s = line[s][
+#    
+#    #print "t=" + str(t) + ", s=" + str(s)
+#    for i in range(len(line)):
+#        xy = line[i]
+#        x = xy[0]
+#        y = xy[1]
+#        
+#        #print str(x) + ", " + str(y)
+#        hollow_mask[y][x] = 1
+#            
+#    #
+#    colorimg[hollow_mask != 0] = [255, 0, 0]            
+                    
+                    
+    #------------------------------------------------------------------------------------------------------------------------------------
+    # outline of line 
+    #------------------------------------------------------------------------------------------------------------------------------------       
+        
+    hollow_mask = roi*0                
+    
+    #print all_lines.shape
+    #ine_t = all_lines[t]
+    
+    #print type(line_t)
+    #print len(line_t)
+    
+    #line_t_s = line[s][2] 
+    
+    #print type(line_t_s)
+    #print len(line_t_s)
+    
+    #print line_t_s              
+    #print line_t_s[0]                
+    #print line_t_s[1]
+    
+    #print "t=" + str(t) + ", s=" + str(s)
+    for i in range(len(line)):
+        xy = line[i]
+        x = xy[0]
+        y = xy[1]
+        
+        #print str(x) + ", " + str(y)
+        hollow_mask[y][x] = 1
+            
+    #
+    colorimg[hollow_mask != 0] = [255, 0, 0]                
+
+
+    #------------------------------------------------------------------------------------------------------------------------------------
+    # threshold point
+    #------------------------------------------------------------------------------------------------------------------------------------
+    
+    hollow_mask = roi*0             
+
+    #print "HERE"
+    #print all_coords.shape
+    
+    #coords_t = all_coords[t]
+    
+    #print type(coords_t)
+    #print len(coords_t)
+
+    
+    #coord_t_s = point[s]
+
+    #print type(coord_t_s)
+    #print len(coord_t_s)
+            
+    #print coord_t_s
+    #print coord_t_s[0]
+    #print coord_t_s[1]
+    
+    #exit(1)
+    
+    for i in range(len(point)):
+        xy = point[i]
+        x = xy[0]
+        y = xy[1]                
+
+        hollow_mask[y][x] = 1
+        
+    #print coords.shape
+    
+    #eroded = binary_erosion(coords)
+    #hollow_mask = np.where(eroded, 0, coords)
+    colorimg[hollow_mask != 0] = [0, 255, 0]
+    
+    #print "---"
+    
+    
+    #------------------------------------------------------------------------------------------------------------------------------------
+    # save image
+    #------------------------------------------------------------------------------------------------------------------------------------
+        
+    #loc = np.abs(dataset.metas[s][t].SliceLocation)
+    
+    image.imsave(name, colorimg)
+                
+                
+    
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+def save_masks_to_dir(dataset, all_masks, all_rois, all_circles, all_lines, all_coords, closest, metas):
+    
+
     try:
         
         os.mkdir("output/%s" % dataset.name)
-        
+
+
+        #-----------------------------------------------------------------------------------------------------------------------------------------------------
+        #-----------------------------------------------------------------------------------------------------------------------------------------------------
+            
         for t in range(len(dataset.time)):
             
             os.mkdir("output/%s/time%02d" % (dataset.name, t))
-            
+
+            #-----------------------------------------------------------------------------------------------------------------------------------------------------
+            #-----------------------------------------------------------------------------------------------------------------------------------------------------
+                        
             for s in range(len(dataset.slices)):
+
+                meta = metas[s][t]
+    
+                #------------------------------------------------------------------------------------------------------------------------------------
+                #------------------------------------------------------------------------------------------------------------------------------------
+
+                loc = np.abs(dataset.metas[s][t].SliceLocation)
                 
-                mask = all_masks[t][s]
-                image.imsave("output/%s/time%02d/slice%02d_mask.png" % (dataset.name, t, s), mask)
+                name = "output/%s/time%02d/slice%02d_%04f_color.png" % (dataset.name, t, s, loc)
                 
-                eroded = binary_erosion(mask)
-                hollow_mask = np.where(eroded, 0, mask)
-                colorimg = cv2.cvtColor(dataset.images[s][t], cv2.COLOR_GRAY2RGB)
-                colorimg = colorimg.astype(np.uint8)
-                colorimg[hollow_mask != 0] = [255, 0, 255]
-                image.imsave("output/%s/time%02d/slice%02d_color.png" % (dataset.name, t, s), colorimg)
+                save_image(name, dataset.images[s][t], all_masks[t][s], all_rois[s], all_lines[t][s][2], all_coords[t][s], meta)
+
+
+                #------------------------------------------------------------------------------------------------------------------------------------
+                #------------------------------------------------------------------------------------------------------------------------------------
+                
+                if (s == closest):
+                
+                    name = "middle_slices/case%04d_time%02d_slice%02d_%04f_color.png" % (int(dataset.name), t, s, loc)
+                
+                    save_image(name, dataset.images[s][t], all_masks[t][s], all_rois[s], all_lines[t][s][2], all_coords[t][s], meta)
+
 
     except Exception, e:
-        print "Exception: " + e.Message()
+        
+        print "Exception: " + str(e)
     
     return
                          
@@ -95,28 +356,51 @@ def calc_rois(images, index):
     rois, circles = get_ROIs(dc, proc_regress_h1s, coords, index)
     
     return rois, circles
-    
-    
+
+
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
 def calc_all_areas(images, rois, circles, index):
+    
     closest_slice = get_closest_slice(rois)
     (_, times, _, _) = images.shape
 
-    def calc_areas(time):
-        log(index, "Calculating areas at time %d..." % time, 2)
-        mask, mean = locate_lv_blood_pool(images, rois, circles, closest_slice,
-                                          time)
-        masks, areas = propagate_segments(images, rois, mask, mean,
-                                          closest_slice, time)
-        return (masks, areas)
 
-    result = np.transpose(map(calc_areas, range(times)))
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+
+    def calc_areas(time):
+
+        log(index, "Calculating areas at time %d..." % time, 2)
+
+        mask, mean, line, coord = locate_lv_blood_pool(images, rois, circles, closest_slice, time)
+        masks, areas = propagate_segments(images, rois, mask, mean, closest_slice, time)
+
+        lines = dict()
+        coords = dict()
+        
+        for key in masks:
+            lines[key] = line #masks[key] #0 #line
+            coords[key] = coord #masks[key] #0 #line
+
+        return (masks, areas, lines, coords)
+
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+
+    result = map(calc_areas, range(times))
+
+    result = np.transpose(result)
+
     all_masks = result[0]
     all_areas = result[1]
-    
-    return all_masks, all_areas
+    all_lines = result[2]
+    all_coords = result[3]
+
+
+    return all_masks, all_areas, all_lines, all_coords, closest_slice
 
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -615,19 +899,20 @@ def get_closest_slice(rois):
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-def locate_lv_blood_pool(images, rois, circles, closest_slice, time):
-    best, best_fn = find_best_angle(rois[closest_slice],
-                                    circles[closest_slice])
-    mean, coords, idx = find_threshold_point(best, best_fn)
-    thresh, img_bin = cv2.threshold(images[closest_slice,
-                                           time].astype(np.float32),
-                                    mean, 255.0, cv2.THRESH_BINARY)
+def locate_lv_component(img_bin, coords, idx):
+    
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+        
     labeled, num = label(img_bin)
     x, y = coords[idx]
 
     count = 0
+    #------------------------------------------------------------------------------------------------------------------------------------------------
     # Look along the line for a component. If one isn't found within a certain
     # number of indices, just spit out the original coordinate.
+    #------------------------------------------------------------------------------------------------------------------------------------------------        
+
     while labeled[y][x] == 0:
         idx += 1
         count += 1
@@ -642,6 +927,241 @@ def locate_lv_blood_pool(images, rois, circles, closest_slice, time):
     else:
         component = np.array([[y, x]])
 
+
+    return labeled, component, count
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+def locate_lv_blood_pool(images, rois, circles, closest_slice, time):
+    
+    #print "locate_lv_blood_pool: " + str(closest_slice)
+
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    best, best_fn = find_best_angle(rois[closest_slice], circles[closest_slice])
+    mean, coords, idx = find_threshold_point(best, best_fn)
+
+    #print "Best angle: " + str( (best * 360) / (2 * np.pi) )
+    
+#    name = "test/roi_time%02d_slice%02d_color.png" % (time, closest_slice)
+#    save_image_gray(name, rois[closest_slice])
+
+#    name = "test/circle_time%02d_slice%02d_color.png" % (time, closest_slice)   
+#    image.imsave(name, circles[closest_slice])    
+
+
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#
+#    img = images[closest_slice, time]
+#    
+#    name = "imgOrig/img_time%02d_slice%02d_color.png" % (time, closest_slice)
+#    
+#    image.imsave(name, img)
+
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    #imgf = img.astype(np.float32)    
+#
+#    name = "imgFloat32/float_time%02d_slice%02d_color.png" % (time, closest_slice)
+#    
+#    image.imsave(name, imgf)
+
+
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    
+#    img_gray16 = img.astype(np.uint16) 
+#    
+#    name = "imgGray/gray16_time%02d_slice%02d_color.png" % (time, closest_slice)
+#    
+#    save_image_gray(name, img_gray16)
+
+
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    
+#    img_gray8 = get_image_gray(img) # cv2.convertScaleAbs(img_gray16)
+#    
+#    name = "imgGray/gray8_time%02d_slice%02d_color.png" % (time, closest_slice)
+#    
+#    save_image_gray(name, img_gray8)
+
+ 
+    
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    # Threshold
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    #print "Threshold: " + str(mean)
+    
+    #img_8UC1 = img.astype(np.uint8)
+    #img_8UC1 = img_gray8.copy()
+  
+    #thresh, img_bin = cv2.threshold(imgf, mean, 255.0, cv2.THRESH_BINARY)  
+    #thresh, img_bin = cv2.threshold(img_8UC1, mean, 255.0, cv2.THRESH_BINARY)
+    #thresh, img_bin = cv2.threshold(img_gray8, mean, 255.0, cv2.THRESH_BINARY)    
+    #thresh, img_bin = cv2.threshold(img_gray16, mean, 255.0, cv2.THRESH_BINARY)
+    
+    #img_bin = cv2.adaptiveThreshold(img_8UC1, 255.0, cv2.ADAPTIVE_THRESH_MEAN_C    , cv2.THRESH_BINARY, 11, 2)
+    #img_bin = cv2.adaptiveThreshold(img_8UC1, 255.0, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)   
+    #thresh, img_bin = cv2.threshold(img_8UC1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+   
+    thresh, img_bin = cv2.threshold(images[closest_slice, time].astype(np.float32), mean, 255.0, cv2.THRESH_BINARY)   
+
+
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#
+#    name = "imgGray/bin_time%02d_slice%02d_color.png" % (time, closest_slice)
+#    
+#    save_image_gray(name, img_bin)
+
+
+
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#
+#    restrictToRoi = False
+#    
+#    if restrictToRoi:
+#        
+#        print "Restrict to ROI..."
+#        
+#        #roi16 = rois[closest_slice].astype(np.uint16)
+#        #roi8 = cv2.convertScaleAbs(roi16)
+#        #maskimage = cv2.inRange(roi8, 1, 255)
+#    
+#        roi = rois[closest_slice] 
+#        
+#        name = "imgGray/mask0_time%02d_slice%02d_color.png" % (time, closest_slice)
+#        save_image_gray(name, maskimage.astype(uint16))
+#            
+#        
+#        maxVal = np.max(roi)
+#        
+#        print maxVal
+#        
+#        maskimage = cv2.inRange(roi, 1, 255)
+#    
+#    
+#        
+#        name = "imgGray/mask_time%02d_slice%02d_color.png" % (time, closest_slice)
+#        save_image_gray(name, maskimage)
+#        
+#        
+#        
+#        img_bin = cv2.bitwise_and(img_bin, img_bin, mask=maskimage)
+#    
+#        name = "thresholds/thresh_time%02d_slice%02d_color.png" % (time, closest_slice)
+#        
+#        image.imsave(name, img_bin)
+
+
+
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    
+#    gray = img_8UC1.copy()
+# 
+#    #cimg = img_8UC1.copy()
+#    
+#    gray = cv2.bilateralFilter(gray, 11, 17, 17)
+#    
+#    edged = cv2.Canny(gray, 100, 200, 10)
+#
+#    maskimage = cv2.inRange(rois[closest_slice], 1, 255)
+#    
+#    edged = cv2.bitwise_and(edged, edged, mask=maskimage)
+
+
+#
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#
+#    contours, hierarchy = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+#    
+#    contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
+#
+#    name = "contour_time%02d_slice%02d_color.png" % (time, closest_slice)
+#    
+#    save_image_contours(name, edged, contours)
+
+
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------  
+
+    labeled, component, count = locate_lv_component(img_bin, coords, idx)
+          
+    #labeled, num = label(img_bin)
+
+#    
+#    #------------------------------------------------------------------------------------------------------------------------------------------------
+#    #------------------------------------------------------------------------------------------------------------------------------------------------    
+#
+#    img_comp = img_bin.copy()*0
+#    
+#    for point in component:
+#        
+#        x, y = point[0], point[1]
+#        
+#        img_comp[x][y] = 255
+#    
+#    
+#    #
+#    roiArea = np.count_nonzero(rois[closest_slice])
+#    lvArea  = np.count_nonzero(img_comp)
+#    ratio = float(lvArea) / float(roiArea)
+#    
+#    #rint "roiArea: " + str(roiArea)
+#    #print "lvArea:  " + str(lvArea)
+#
+#    erode = False
+#    
+#    if (erode and ratio > 0.11):
+#        
+#        print "eroding..."
+#        
+#        #element = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))    
+#        element = cv2.getStructuringElement(cv2.MORPH_CROSS, (5,5))
+#        img_comp = cv2.erode(img_comp, element)    
+#    
+#        #labeled, num = label(img_comp)
+#        
+#        #print "Updated Connected Components: " + str(num)
+#            
+##        contours, hierarchy = cv2.findContours(img_comp.copy().astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+##        
+##        print "Updated Connected Components: " + str(len(contours))
+##        
+
+    
+    
+#    
+#        #------------------------------------------------------------------------------------------------------------------------------------------------
+#        #------------------------------------------------------------------------------------------------------------------------------------------------  
+#    
+#        labeled, component, count = locate_lv_component(img_comp, coords, idx)
+
+#
+#    name = "components/component_time%02d_slice%02d_color.png" % (time, closest_slice)
+#                
+#    image.imsave(name, img_comp)
+
+
+
+
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------        
+
     hull = cv2.convexHull(component)
     squeezed = hull
     if count <= COMPONENT_INDEX_TOLERANCE:
@@ -651,10 +1171,9 @@ def locate_lv_blood_pool(images, rois, circles, closest_slice, time):
     mask = np.zeros_like(labeled)
     cv2.drawContours(mask, [hull], 0, 255, thickness=-1)
 
-    return mask, mean
+    coords = coords[idx:idx+1]
 
-    
-    
+    return mask, mean, best_fn, coords
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -664,6 +1183,26 @@ def propagate_segments(images, rois, base_mask, mean, closest_slice, time):
     def propagate_segment(i, mask):
         
         thresh, img_bin = cv2.threshold(images[i, time].astype(np.float32), mean, 255.0, cv2.THRESH_BINARY)
+
+
+
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+
+        img_gray8 = cv2.convertScaleAbs(images[i, time].astype(np.uint16))
+
+        #thresh, img_bin = cv2.threshold(img_gray8, mean, 255.0, cv2.THRESH_BINARY)
+
+
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+
+        maskimage = cv2.inRange(rois[i], 1, 255)
+
+        #img_bin = cv2.bitwise_and(img_bin, img_bin, mask=maskimage)
+
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+        #--------------------------------------------------------------------------------------------------------------------------------------------    
 
         labeled, features = label(img_bin)
 
@@ -701,38 +1240,97 @@ def propagate_segments(images, rois, base_mask, mean, closest_slice, time):
     areas = {}
     masks[closest_slice] = base_mask
     areas[closest_slice] = np.count_nonzero(base_mask)
+
+
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
+
+    #for i in range(0, closest_slice-1):
     for i in range(closest_slice-1, -1, -1):
-        newmask = propagate_segment(i, newmask)
+
+        newmask = propagate_segment(i, newmask)        
+        newarea = np.count_nonzero(newmask)
+        roiarea = np.count_nonzero(rois[i])
+        ratio   = float(newarea)/float(roiarea)
+
+#        print "mask: " + str(i)
+#        print "area: " + str(newarea)
+#        print "roi:  " + str(roiarea)
+#        print "ratio: " + str(ratio)     
+
+
+#        Correct = False
+#        
+#        if (Correct == True):
+#            
+#            print "Correcting..."
+#            
+#            if (ratio > 0.6):
+#                
+#                ind = i + 1    
+#                    
+#                masks[i] = masks[ind]
+#                areas[i] = areas[ind]
+#                
+#            else:
+#                
+#                masks[i] = newmask
+#                areas[i] = newarea
+#
+#
+#            print "corrected area: " + str(areas[i])      
+#            print ""     
+#            print "--------------------"        
+#        
+#        
+#        else:
+
         masks[i] = newmask
-        areas[i] = np.count_nonzero(newmask)
+        areas[i] = newarea
+
+
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
 
     newmask = base_mask
+    
     for i in range(closest_slice+1, rois_depth):
-        newmask = propagate_segment(i, newmask)
+
+        newmask = propagate_segment(i, newmask)        
+        newarea = np.count_nonzero(newmask)
+        roiarea = np.count_nonzero(rois[i])
+        ratio   = float(newarea)/float(roiarea)
+#        
+#        print "mask: " + str(i)
+#        print "area: " + str(newarea)
+#        print "roi:  " + str(roiarea)
+#        print "ratio: " + str(ratio)
+
+#        Correct = False
+#        
+#        print "Correcting..."
+#        
+#        if (Correct == True):
+#                
+#            if (ratio > 0.6):
+#                
+#                masks[i] = masks[i-1]
+#                areas[i] = areas[i-1]
+#                
+#            else:
+#                
+#                masks[i] = newmask
+#                areas[i] = newarea
+#
+#            print "corrected area: " + str(areas[i])
+#            print ""  
+#        
+#        
+#        else:
+            
         masks[i] = newmask
-        areas[i] = np.count_nonzero(newmask)
+        areas[i] = newarea
 
     return masks, areas
 
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
