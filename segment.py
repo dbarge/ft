@@ -186,9 +186,16 @@ def auto_segment_all_datasets():
 
     elif (options.num_samples):        
   
-        random.seed(0)
-        studies = random.sample(studies, options.num_samples)
-            
+        #random.seed(0)
+        #studies = random.sample(studies, options.num_samples)
+        #studies.sort()
+
+        studies_int = [int(x) for x in studies]
+        studies_int.sort() 
+        studies_int = studies_int[0:options.num_samples]
+        studies = [str(x) for x in studies_int]        
+
+
     elif (options.list_of_samples):        
     
         studies = options.list_of_samples
@@ -240,8 +247,12 @@ def auto_segment_all_datasets():
 
     if os.path.exists("output"):
         shutil.rmtree("output")
-        
+
+    if os.path.exists("middle_slices"):
+        shutil.rmtree("middle_slices")
+
     os.mkdir("output")
+    os.mkdir("middle_slices")
 
 
     #------------------------------------------------------------------------------------------------------------------------------------------------
@@ -664,6 +675,25 @@ def get_path(d, s):
 #    return Dataset(full_path, s)
 
 
+#------------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------
+
+class ImageData(object):
+    
+    class MetaData(object):
+        
+        def __init__(self):
+            
+            self.SliceLocation = None
+            self.patCoords = None
+            
+    def __init__(self):
+      
+        self.img = None
+        self.meta = self.MetaData()
+
+        return
+
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -688,9 +718,13 @@ class Dataset(object):
 #        self.name = subdir
 #        
 #        return
-        
-        
+
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+
     def __init__(self, directory, subdir):
+
         # deal with any intervening directories
         while True:
             subdirs = next(os.walk(directory))[1]
@@ -735,15 +769,162 @@ class Dataset(object):
         Dataset.dataset_count += 1
         self.name = subdir
 
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+
     def _filename(self, s, t):
+
         return os.path.join(self.directory,"sax_%d" % s, "IM-%04d-%04d.dcm" % (self.slices_map[s], t))
 
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+
+    def test(self, d):
+        
+        pos = d.PatientPosition
+        
+        rad2deg = float(360) / (float(2)*np.pi)
+        
+
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+        
+        row_dcosX = d.ImageOrientationPatient[0]
+        row_dcosY = d.ImageOrientationPatient[1]
+        row_dcosZ = d.ImageOrientationPatient[2]        
+
+        col_dcosX = d.ImageOrientationPatient[3]
+        col_dcosY = d.ImageOrientationPatient[4]
+        col_dcosZ = d.ImageOrientationPatient[5] 
+        
+        nrm_dcosX = row_dcosY* col_dcosZ - row_dcosZ * col_dcosY; 
+        nrm_dcosY = row_dcosZ* col_dcosX - row_dcosX * col_dcosZ; 
+        nrm_dcosZ = row_dcosX* col_dcosY - row_dcosY * col_dcosX; 
+        
+        
+        rot = np.matrix([
+                [ row_dcosX, row_dcosY, row_dcosZ ],
+                [ col_dcosX, col_dcosY, col_dcosZ ],
+                [ nrm_dcosX, nrm_dcosY, nrm_dcosZ ]
+        ])
+
+
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+
+        rowvec = np.matrix([1, 1, 1])
+        colvec = np.matrix([ [1], [1], [1] ])
+        
+        #print rowvec
+        #print colvec
+        
+        
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+
+        pat_unitX = np.matrix([ [1], [0], [0] ])
+        pat_unitY = np.matrix([ [0], [1], [0] ])
+        pat_unitZ = np.matrix([ [0], [0], [1] ])
+        
+        
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+        #--------------------------------------------------------------------------------------------------------------------------------------------
+        
+        patX_img = rot * pat_unitX
+        patY_img = rot * pat_unitY
+        patZ_img = rot * pat_unitZ        
+
+        
+        patX_img_proj = [ patX_img.item(0, 0), patX_img.item(1, 0) ]
+        patY_img_proj = [ patY_img.item(0, 0), patY_img.item(1, 0) ]
+        patZ_img_proj = [ patZ_img.item(0, 0), patZ_img.item(1, 0) ]
+        
+        #patY_img_proj = [ [patY_img[0]], [patY_img[1]] ]
+        #patZ_img_proj = [ [patZ_img[0]], [patZ_img[1]] ]
+            
+        #print patX_img_proj
+        #print patY_img_proj
+        #print patZ_img_proj        
+
+        #hollow_mask = roi*0                
+    
+        #pt1 = cv2.Point(0, 0)
+        
+        #cv2.line(hollow_mask, )
+    
+        #exit(1)
+    
+        ret = [ patX_img_proj, patY_img_proj, patZ_img_proj ]  
+        #print np.multiply(patX_img_proj, 10)
+        
+        #print ret[0]
+        
+        #exit(0)
+        
+        return ret
+
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+
     def _read_dicom_image(self, filename):
+
         d = dicom.read_file(filename)
+        #print d
+        #print filename
+        #print "Slice: " + str(s) + " Location: " + str(d.SliceLocation)
+        
+        #exit(1)
+
         img = d.pixel_array
-        return np.array(img)
+
+        data = ImageData()
+        data.img = np.array(img)
+
+        data.meta = ImageData.MetaData()
+        data.meta.SliceLocation = d.SliceLocation        
+        
+        
+        #print d
+
+            
+        data.meta.patCoords = self.test(d)
+        
+#        print filename + ", " + str(d.PhotometricInterpretation) + ", " + str(d.ImageType) 
+#
+#        if (d.PhotometricInterpretation != "MONOCHROME2"):
+#            print "Unexpted: " + str(d.PhotometricInterpretation)
+
+       
+        
+        #rot = np.matrix([row_costheta_x, row_costheta_y, 0])
+        
+#                 [col_costheta_x, col_costheta_y, 0],
+#                 [0, 0, 
+#        ])
+        
+        #print filename + "z = " + str(z) + ", pos = " + str(pos)
+        #print filename + ": theta_x = " + str(theta_x) + ", theta_y = " + str(theta_y) + ", theta_z = " + str(theta_z)
+        
+        #print filename + ", " + str(d.SmallestImagePixelValue) + ", " +  str(d.LargestImagePixelValue)             
+
+        #print d.dir("rientation")
+        
+        #print d
+        
+        #exit(0)
+        
+        return data
+        #return np.array(img)#, d #, d.SliceLocation, d.SliceThickness
+
+
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
 
     def _read_all_dicom_images(self):
+
         f1 = self._filename(self.slices[0], self.time[0])
         d1 = dicom.read_file(f1)
         (x, y) = d1.PixelSpacing
@@ -753,21 +934,82 @@ class Dataset(object):
 
         # try a couple of things to measure distance between slices
         try:
+
             dist = np.abs(d2.SliceLocation - d1.SliceLocation)
+
         except AttributeError:
+
             try:
+
                 dist = d1.SliceThickness
+
             except AttributeError:
+
                 dist = 8  # better than nothing...
 
-        self.images = np.array([[self._read_dicom_image(self._filename(d, i))
-                                 for i in self.time]
-                                for d in self.slices])
+
+
+        #
+        self.images = np.array([[self._read_dicom_image(self._filename(d, i)).img for i in self.time] for d in self.slices])
+        self.metas  = np.array([[self._read_dicom_image(self._filename(d, i)).meta for i in self.time] for d in self.slices])
+
+
+#        print type(self.images)
+#        print self.images.shape
+#        print len(self.time)
+#        print len(self.slices)
+
+#        self.images = np.zeros( (len(self.slices), len(self.time), 0, 0) )
+#        
+#        print self.images.shape         
+#        
+#        #self.images.shape = 
+#
+#        
+#        for i in self.time:
+#            
+#            id = 0
+#            
+#            for d in self.slices:
+#                
+#                img = self._read_dicom_image(self._filename(d, i))
+#                
+#                print img.shape
+#
+#                #print d
+#                #print self.images[:,:,:,:].shape                
+#                print self.images[id, i-1,:,:].shape
+#                
+#                self.images[id, i-1,:,:].shape = img.shape
+#                
+#                print "--"
+#                
+#                id += 1
+#                
+#                #.append(file)
+#                
+#                #print str(d) + ": " + str(loc) + " " + str(t)
+#            #print ""
+#            
+#
+#        print self.images.shape
+#        
+#        exit(1)
+        
         self.dist = dist
         self.area_multiplier = x * y
+#        
+#        #exit(1)
+        
 
+   
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------------------------------------------------------
+        
     def load(self):
+        
         self._read_all_dicom_images()
+
 
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -777,15 +1019,18 @@ class Dataset(object):
 def segment_dataset(dataset, index):
     
     images = dataset.images
+    metas = dataset.metas
     dist = dataset.dist
     areaMultiplier = dataset.area_multiplier
+    
+    #return
     
     # shape: num slices, num snapshots, rows, columns
     log(index, "Calculating rois...", 1)
     rois, circles = calc_rois(images, index)
-
+    
     log(index, "Calculating areas...", 1)
-    all_masks, all_areas = calc_all_areas(images, rois, circles, index)
+    all_masks, all_areas, all_lines, all_coords, closest = calc_all_areas(images, rois, circles, index)
 
     log(index, "Calculating volumes...", 1)
     area_totals = [calc_total_volume(a, areaMultiplier, dist) for a in all_areas]
@@ -797,7 +1042,7 @@ def segment_dataset(dataset, index):
     log(index, "Done, ef is %f" % ef, 1)
 
     log(index, "Saving masks...", 1)
-    save_masks_to_dir(dataset, all_masks)
+    save_masks_to_dir(dataset, all_masks, rois, circles, all_lines, all_coords, closest, metas)
     log(index, "Done", 1)
     
     output = {}
