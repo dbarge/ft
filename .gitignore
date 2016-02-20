@@ -1,5 +1,5 @@
 output
 data
+imgGray
 *.pyc
-/*.pyc
-/imgGray
+
